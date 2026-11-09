@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wildbound - Monster Collector RPG</title>
+<style>
+:root {
+  --bg: #101522;
+  --panel: #1a2435;
+  --panel2: #222f45;
+  --text: #edf4ff;
+  --muted: #9aabc4;
+  --accent: #70e1b2;
+  --gold: #ffd166;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: radial-gradient(circle at 50% -20%,#30435d,#101522 55%);
+  color: var(--text);
+  font-family: system-ui, sans-serif;
+  min-height: 100vh;
+}
+header {
+  padding: 22px 5vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #ffffff18;
+}
+h1 { margin: 0; letter-spacing: 2px; }
+h1 span { color: var(--accent); }
+.subtitle { color: var(--muted); font-size: 12px; }
+.resources { display: flex; gap: 10px; }
+.pill {
+  background: var(--panel2);
+  padding: 9px 13px;
+  border-radius: 30px;
+}
+main {
+  max-width: 1100px;
+  margin: 26px auto;
+  padding: 0 18px;
+  display: grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: 18px;
+}
+.panel {
+  background: linear-gradient(145deg,#1b2639,#151e2d);
+  border: 1px solid #ffffff16;
+  border-radius: 20px;
+  padding: 20px;
+}
+.arena {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.enemy-area {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 0;
+}
+.monster {
+  font-size: 90px;
+  animation: float 2.6s ease-in-out infinite;
+}
+@keyframes float {
+  50% { transform: translateY(-9px); }
+}
+.monster-card {
+  width: 48%;
+  max-width: 260px;
+  text-align: center;
+}
+.name { font-weight: 800; font-size: 18px; }
+.level { font-size: 12px; color: var(--muted); }
+.hpbar {
+  height: 9px;
+  background: #39465b;
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 8px 0;
+}
+.hpfill {
+  height: 100%;
+  background: linear-gradient(90deg,#58d69b,#a4ed8d);
+  transition: width .25s;
+}
+.hpfill.low {
+  background: linear-gradient(90deg,#ff617d,#ffb36b);
+}
+.hptext { font-size: 11px; color: var(--muted); }
+.battle-message {
+  background: #111a28;
+  border-radius: 12px;
+  padding: 13px;
+  min-height: 58px;
+}
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 9px;
+  margin-top: 12px;
+}
+button {
+  border: 0;
+  border-radius: 11px;
+  padding: 12px;
+  background: var(--panel2);
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { filter: brightness(1.2); }
+button:disabled { opacity: .35; cursor: not-allowed; }
+.primary { background: var(--accent); color: #10251e; }
+.gold { background: var(--gold); color: #33270c; }
+.tabs { display: flex; gap: 7px; margin-bottom: 13px; }
+.tab.active { background: var(--accent); color: #10251e; }
+.team-list { display: grid; gap: 9px; }
+.team-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #111a28;
+  border-radius: 13px;
+  padding: 10px;
+}
+.team-item .emoji { font-size: 34px; }
+.details { flex: 1; min-width: 0; }
+.details small { color: var(--muted); }
+.log {
+  height: 145px;
+  overflow: auto;
+  background: #111a28;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 12px;
+  color: #b8c8df;
+}
+.log p { margin: 0 0 7px; }
+.shop-grid,.dex-grid {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 9px;
+}
+.shop-item,.dex-item {
+  background: #111a28;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+.shop-item .emoji,.dex-item .emoji { font-size: 32px; }
+.shop-item p,.dex-item p { font-size: 12px; color: var(--muted); }
+.shop-item button { width: 100%; margin-top: 6px; }
+.hidden { display: none !important; }
+@media(max-width:760px) {
+  main { grid-template-columns: 1fr; }
+  .monster { font-size: 70px; }
+  .panel { padding: 15px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>WILD<span>BOUND</span></h1>
+    <div class="subtitle">A MONSTER-COLLECTING ADVENTURE</div>
+  </div>
+  <div class="resources">
+    <div class="pill">🪙 <b id="coins">100</b></div>
+    <div class="pill">🔮 <b id="orbs">5</b></div>
+    <div class="pill">🏆 <b id="wins">0</b></div>
+  </div>
+</header>
+
+<main>
+<section class="panel arena">
+  <div>
+    <h2>🌲 Whispering Meadow</h2>
+    <div class="enemy-area">
+      <div class="monster-card">
+        <div class="level" id="enemyLevel">WILD MONSTER</div>
+        <div class="monster" id="enemyEmoji">🌿</div>
+        <div class="name" id="enemyName">Mossling</div>
+        <div class="hpbar"><div class="hpfill" id="enemyHpBar"></div></div>
+        <div class="hptext" id="enemyHpText"></div>
+      </div>
+
+      <div>⚔️ VS</div>
+
+      <div class="monster-card">
+        <div class="level" id="allyLevel">YOUR PARTNER</div>
+        <div class="monster" id="allyEmoji">🔥</div>
+        <div class="name" id="allyName">Cindercub</div>
+        <div class="hpbar"><div class="hpfill" id="allyHpBar"></div></div>
+        <div class="hptext" id="allyHpText"></div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="battle-message" id="message">
+      A wild monster appeared!
+    </div>
+    <div class="actions">
+      <button class="primary" id="attackBtn" onclick="attack()">⚔️ Attack</button>
+      <button class="gold" id="catchBtn" onclick="catchMonster()">🔮 Throw Orb</button>
+      <button onclick="switchMonster()">🔁 Switch Monster</button>
+      <button onclick="runAway()">🏃 Run Away</button>
+    </div>
+  </div>
+</section>
+
+<aside class="panel">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('team',this)">👥 Team</button>
+    <button class="tab" onclick="showTab('shop',this)">🛒 Shop</button>
+    <button class="tab" onclick="showTab('dex',this)">📖 Bestiary</button>
+  </div>
+
+  <div id="teamTab">
+    <h2>Your Team <span id="teamCount"></span></h2>
+    <div class="team-list" id="teamList"></div>
+  </div>
+
+  <div id="shopTab" class="hidden">
+    <h2>Trail Supply Shop</h2>
+    <div class="shop-grid">
+      <div class="shop-item">
+        <div class="emoji">🔮</div>
+        <b>Capture Orb</b>
+        <p>25 coins</p>
+        <button onclick="buy('orb')">Buy Orb</button>
+      </div>
+      <div class="shop-item">
+        <div class="emoji">🧪</div>
+        <b>Health Potion</b>
+        <p>20 coins</p>
+        <button onclick="buy('potion')">Buy Potion</button>
+      </div>
+      <div class="shop-item">
+        <div class="emoji">✨</div>
+        <b>Super Orb</b>
+        <p>60 coins</p>
+        <button onclick="buy('super')">Buy Super Orb</button>
+      </div>
+      <div class="shop-item">
+        <div class="emoji">🏕️</div>
+        <b>Team Rest</b>
+        <p>35 coins</p>
+        <button onclick="buy('rest')">Rest Team</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dexTab" class="hidden">
+    <h2>Discovered Monsters</h2>
+    <div class="dex-grid" id="dexGrid"></div>
+  </div>
+
+  <h2 style="margin-top:20px">📜 Adventure Log</h2>
+  <div class="log" id="log"></div>
+</aside>
+</main>
+
+<script>
+const species = [
+ {name:"Mossling",emoji:"🌿",hp:30,atk:7,def:3,type:"Nature",reward:18},
+ {name:"Cindercub",emoji:"🔥",hp:35,atk:9,def:2,type:"Fire",reward:22},
+ {name:"Aquafin",emoji:"💧",hp:32,atk:8,def:3,type:"Water",reward:20},
+ {name:"Voltkit",emoji:"⚡",hp:28,atk:11,def:1,type:"Electric",reward:24},
+ {name:"Pebblit",emoji:"🪨",hp:42,atk:7,def:5,type:"Earth",reward:25},
+ {name:"Moonmoth",emoji:"🦋",hp:29,atk:10,def:2,type:"Mystic",reward:27},
+ {name:"Frostfang",emoji:"🐺",hp:38,atk:10,def:4,type:"Ice",reward:30},
+ {name:"Sproutle",emoji:"🐢",hp:36,atk:8,def:4,type:"Nature",reward:21}
+];
+
+let coins=100, orbs=5, superOrbs=1, wins=0;
+let enemy, locked=false, active=0;
+let team=[makeMonster(species[1],5)];
+let discovered=new Set(["Cindercub"]);
+
+function makeMonster(s,level=1) {
+  let max=s.hp+level*4;
+  return {
+    name:s.name,emoji:s.emoji,type:s.type,level,
+    hp:max,maxHp:max,
+    atk:s.atk+Math.floor(level*1.5),
+    def:s.def+Math.floor(level*.7),
+    xp:0,next:25+level*12
+  };
+}
+
+function randomWild() {
+  let s=species[Math.floor(Math.random()*species.length)];
+  return makeMonster(s,1+Math.floor(Math.random()*3));
+}
+
+function log(t) {
+  let p=document.createElement("p");
+  p.textContent="› "+t;
+  document.getElementById("log").prepend(p);
+}
+
+function msg(t) {
+  document.getElementById("message").textContent=t;
+  log(t);
+}
+
+function spawn() {
+  enemy=randomWild();
+  locked=false;
+  msg(`A wild ${enemy.name} appeared!`);
+  render();
+}
+
+function bar(id,m) {
+  let el=document.getElementById(id);
+  el.style.width=Math.max(0,m.hp/m.maxHp*100)+"%";
+  el.classList.toggle("low",m.hp/m.maxHp<.3);
+}
+
+function render() {
+  let a=team[active];
+
+  document.getElementById("coins").textContent=coins;
+  document.getElementById("orbs").textContent=orbs+superOrbs;
+  document.getElementById("wins").textContent=wins;
+
+  document.getElementById("enemyName").textContent=enemy.name;
+  document.getElementById("enemyEmoji").textContent=enemy.emoji;
+  document.getElementById("enemyLevel").textContent="WILD • LV "+enemy.level;
+  document.getElementById("enemyHpText").textContent=`HP ${enemy.hp}/${enemy.maxHp}`;
+
+  document.getElementById("allyName").textContent=a.name;
+  document.getElementById("allyEmoji").textContent=a.emoji;
+  document.getElementById("allyLevel").textContent="YOUR PARTNER • LV "+a.level;
+  document.getElementById("allyHpText").textContent=`HP ${a.hp}/${a.maxHp}`;
+
+  bar("enemyHpBar",enemy);
+  bar("allyHpBar",a);
+
+  document.getElementById("teamCount").textContent=`(${team.length}/6)`;
+
+  document.getElementById("teamList").innerHTML=team.map((m,i)=>`
+    <div class="team-item">
+      <div class="emoji">${m.emoji}</div>
+      <div class="details">
+        <strong>${m.name} Lv.${m.level}</strong>
+        <small>${m.type} • HP ${m.hp}/${m.maxHp}</small>
+        <div class="hpbar">
+          <div class="hpfill" style="width:${m.hp/m.maxHp*100}%"></div>
+        </div>
+      </div>
+      <button ${i===active?"disabled":""} onclick="setActive(${i})">
+        ${i===active?"Active":"Select"}
+      </button>
+    </div>
+  `).join("");
+
+  document.getElementById("dexGrid").innerHTML=species.map(s=>`
+    <div class="dex-item">
+      <div class="emoji">${discovered.has(s.name)?s.emoji:"❔"}</div>
+      <b>${discovered.has(s.name)?s.name:"Unknown"}</b>
+      <p>${discovered.has(s.name)?s.type:"Not discovered"}</p>
+    </div>
+  `).join("");
+
+  document.getElementById("catchBtn").disabled=locked||(!orbs&&!superOrbs);
+  document.getElementById("attackBtn").disabled=locked;
+}
+
+function setActive(i) {
+  if(team[i].hp<=0) return msg("This monster needs healing!");
+  active=i;
+  msg(team[i].name+" joined the battle!");
+  render();
+}
+
+function attack() {
+  if(locked) return;
+  let a=team[active];
+  let damage=Math.max(2,a.atk+Math.floor(Math.random()*5)-enemy.def);
+  enemy.hp=Math.max(0,enemy.hp-damage);
+  msg(`${a.name} attacks for ${damage} damage!`);
+  if(enemy.hp<=0) return victory();
+  render();
+  setTimeout(enemyTurn,650);
+}
+
+function enemyTurn() {
+  if(locked) return;
+  let a=team[active];
+  let damage=Math.max(2,enemy.atk+Math.floor(Math.random()*4)-a.def);
+  a.hp=Math.max(0,a.hp-damage);
+  msg(`${enemy.name} hits ${a.name} for ${damage} damage!`);
+
+  if(a.hp<=0) {
+    let next=team.findIndex((m,i)=>i!==active&&m.hp>0);
+    if(next>=0) {
+      active=next;
+      msg(`${a.name} fainted! ${team[active].name}, you're up!`);
+    } else {
+      locked=true;
+      msg("Your team fainted! Use Team Rest in the shop.");
+    }
+  }
+  render();
+}
+
+function gainXP(m,n) {
+  m.xp+=n;
+  if(m.xp>=m.next) {
+    m.xp-=m.next;
+    m.level++;
+    m.next+=m.level*12;
+    m.maxHp+=7;
+    m.hp=Math.min(m.maxHp,m.hp+12);
+    m.atk+=2;
+    m.def++;
+    log(`${m.name} reached level ${m.level}!`);
+  }
+}
+
+function victory() {
+  locked=true;
+  let reward=species.find(s=>s.name===enemy.name).reward;
+  coins+=reward;
+  wins++;
+  gainXP(team[active],15+enemy.level*4);
+  msg(`${enemy.name} defeated! You earned ${reward} coins.`);
+  render();
+  setTimeout(spawn,1600);
+}
+
+function catchMonster() {
+  if(locked) return;
+
+  let useSuper=superOrbs>0 &&
+    confirm("Use a Super Orb for a higher catch chance?");
+
+  if(useSuper) superOrbs--;
+  else if(orbs>0) orbs--;
+  else return msg("No normal orbs left. Buy more!");
+
+  let chance=useSuper?.78:.38;
+  chance+=((enemy.maxHp-enemy.hp)/enemy.maxHp)*.48;
+  chance=Math.min(.95,chance);
+
+  if(Math.random()<chance) {
+    discovered.add(enemy.name);
+
+    if(team.length<6) {
+      team.push({...enemy,hp:Math.max(1,Math.ceil(enemy.maxHp*.55))});
+      msg(`You caught ${enemy.name}! It joined your team.`);
+    } else {
+      coins+=15;
+      msg("Team full! You received 15 coins instead.");
+    }
+
+    locked=true;
+    render();
+    setTimeout(spawn,1700);
+  } else {
+    msg(`${enemy.name} broke free!`);
+    render();
+    setTimeout(enemyTurn,650);
+  }
+}
+
+function switchMonster() {
+  let next=team.findIndex((m,i)=>i!==active&&m.hp>0);
+  if(next<0) return msg("No other healthy monster!");
+  setActive(next);
+  setTimeout(enemyTurn,500);
+}
+
+function runAway() {
+  msg("You escaped into the meadow.");
+  spawn();
+}
+
+function buy(item) {
+  if(item==="orb") {
+    if(coins<25) return msg("Not enough coins!");
+    coins-=25; orbs++;
+  }
+  if(item==="super") {
+    if(coins<60) return msg("Not enough coins!");
+    coins-=60; superOrbs++;
+  }
+  if(item==="potion") {
+    if(coins<20) return msg("Not enough coins!");
+    coins-=20;
+    let a=team[active];
+    a.hp=Math.min(a.maxHp,a.hp+25);
+    msg(`${a.name} recovered health!`);
+  }
+  if(item==="rest") {
+    if(coins<35) return msg("Not enough coins!");
+    coins-=35;
+    team.forEach(m=>m.hp=m.maxHp);
+    locked=false;
+    msg("Your whole team is fully rested!");
+  }
+  render();
+}
+
+function showTab(tab,btn) {
+  ["team","shop","dex"].forEach(t=>{
+    document.getElementById(t+"Tab").classList.toggle("hidden",t!==tab);
+  });
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+spawn();
+</script>
+</body>
+</html>
